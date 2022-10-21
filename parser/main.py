@@ -1,4 +1,5 @@
 import csv
+import time
 import logging
 from pathlib import Path
 
@@ -9,11 +10,7 @@ from .utils import setup
 
 logger = logging.getLogger(__name__)
 
-def main():
-    args = argparser.parse_args()
-
-    settings = Settings()
-
+def run(settings: Settings):
     setup.init(settings)
 
     allowed_categories = set(settings.categories)
@@ -88,3 +85,22 @@ def main():
         category_file.close()
 
         product_file.close()
+
+
+def main():
+    args = argparser.parse_args()
+
+    settings = Settings()
+
+    restarted = 0
+
+    while True:
+        try:
+            run(settings)
+
+            break
+        except Exception:
+            if not settings.restart or restarted >= settings.restart['restart_count']:
+                break
+
+            restarted += 1
