@@ -14,7 +14,6 @@ HOST = 'https://zootovary.ru'
 
 @dataclass
 class Parser(HTTP):
-    out_dir: Path = field(default_factory=Path)
     delay_range: Union[int, tuple[int, int]] = 0
 
     _last_request: Union[float, None] = field(default=None, init=False)

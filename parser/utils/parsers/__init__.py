@@ -1,5 +1,6 @@
 import logging
 from typing import Generator, Any
+from dataclasses import dataclass
 
 from .base import Parser
 from .serializers import (
@@ -28,7 +29,14 @@ class CategoryParser(Parser):
         logger.info('Finished parsing categories')
 
 
+@dataclass
 class ProductParser(Parser):
+    prefix: str = ''
+
+    @property
+    def uri(self) -> str:
+        return f'{self.prefix}/catalog'
+
     def get_product_data(self, uri):
         soup = self.get_soup(uri)
 
@@ -43,7 +51,7 @@ class ProductParser(Parser):
     def get_page_data(self, page):
         logger.info(f'Parsing products at page: {page}')
 
-        soup = self.get_soup(f'/catalog?PAGEN_1={page}')
+        soup = self.get_soup(f'{self.uri}?PAGEN_1={page}')
 
         current_page = int(soup.select_one('.navigation-current').text)
 

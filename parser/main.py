@@ -1,8 +1,13 @@
+import csv
+import logging
+from pathlib import Path
+
 from . import argparser
 from .settings import Settings
 from .utils.parsers import CategoryParser, ProductParser
 from .utils import setup
 
+logger = logging.getLogger(__name__)
 
 def main():
     args = argparser.parse_args()
@@ -11,7 +16,75 @@ def main():
 
     setup.init(settings)
 
-    items = CategoryParser().data
+    allowed_categories = set(settings.categories)
 
-    for item in items:
-        print(item)
+    client = CategoryParser(
+        delay_range=settings.delay_range_s,
+        headers=settings.headers,
+        max_retries=settings.max_retries
+    )
+
+    filter_fn = lambda cat: cat['id'] in allowed_categories or not len(allowed_categories)
+
+    categories = filter(filter_fn, client.data)
+
+    logger.info('Parsing categories')
+
+    out_path = Path(settings.output_directory)
+
+    if not out_path.exists():
+        out_path.mkdir()
+
+    category_file = open(out_path / 'categories.csv', 'w')
+
+    product_file = open(out_path / 'products.csv', 'w')
+
+    category_writer = csv.writer(category_file)
+
+    product_writer = csv.writer(product_file)
+
+    try:
+        for i, category in enumerate(categories):
+            logger.debug(category)
+
+            url = category['url']
+
+            logger.info('url')
+
+            if url.endswith('/'):
+                url = url[:-1]
+
+            logger.info(f'Parsing products from category {url}')
+
+            pclient = ProductParser(
+                prefix=url,
+                delay_range=settings.delay_range_s,
+                headers=settings.headers,
+                max_retries=settings.max_retries
+            )
+
+            if not i:
+                category_writer.writerow(category.keys())
+
+            category_writer.writerow(category.values())
+
+            for k, item in enumerate(pclient.data):
+                logger.debug(item)
+
+                for j, variant in enumerate(item.pop('variants')):
+                    data = {
+                        **item,
+                        **variant
+                    }
+
+                    data['images'] = ','.join(data.pop('images'))
+
+                    if not k and not j:
+                        product_writer.writerow(data.keys())
+
+                    product_writer.writerow(data.values())
+
+    finally:
+        category_file.close()
+
+        product_file.close()
