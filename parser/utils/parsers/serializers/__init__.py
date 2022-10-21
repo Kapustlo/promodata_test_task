@@ -1,6 +1,8 @@
 import logging
+from datetime import datetime
 
 from .base import BaseSerializer
+from parser.utils.parsers.base import HOST
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +49,20 @@ class ProductSerializer(BaseSerializer):
     def _map_variant(self, variant):
         tds = variant.select('td')
 
-        article = barcode = volume = ''
+        article = discount = barcode = volume = quantity = weight = ''
 
         in_stock = None
 
         for i, td in enumerate(tds):
             if i + 1 == len(tds):
                 in_stock = bool(td.select('.buybuttonarea'))
+
+            s = td.select_one('s')
+
+            if s:
+                discount = s.text
+
+                continue
 
             try:
                 value = td.select('b')[1].text
@@ -65,7 +74,13 @@ class ProductSerializer(BaseSerializer):
             elif i == 1:
                 barcode = value
             elif i == 2:
-                volume = value
+                if value.endswith('г'):
+                    volume = value
+                elif value.endswith('шт'):
+                    quantity = value
+                else:
+                    weight = value
+
 
         if not article:
             logger.error(f'Failed to get article {tds}')
@@ -82,11 +97,14 @@ class ProductSerializer(BaseSerializer):
             price = ''
 
         return {
-            'article': article,
-            'barcode': barcode,
+            'sku_article': article,
+            'sku_barcode': barcode,
             'price': price,
-            'volume': volume,
-            'in_stock': in_stock
+            'price_promo': discount or price,
+            'sku_volume_min': volume,
+            'sku_weight_min': weight,
+            'ski_quantity_min': quantity,
+            'sku_status': '1' if in_stock else '0'
         }
 
     @property
@@ -119,7 +137,7 @@ class ProductSerializer(BaseSerializer):
 
         if not len(list(filled_images)):
             logger.warning(f'No images for product: {name}')
-            
+
         bread = element.select_one('.breadcrumb-navigation')
 
         tree = ''
@@ -135,10 +153,19 @@ class ProductSerializer(BaseSerializer):
         else:
             logger.error(f'Failed to find breadcrumbs for {name}')
 
+        try:
+            uri = element.select_one('form')['action']
+        except Exception:
+            logger.error(f'Failed to get uri for {name}')
+
+            uri = ''
+
         return {
             'variants': variants,
             'country': country,
-            'name': name,
-            'images': images,
-            'tree': tree
+            'sku_name': name,
+            'sku_images': images,
+            'sku_category': tree,
+            'price_datetime': datetime.utcnow().isoformat(),
+            'sku_link': f'{HOST}{uri}'
         }

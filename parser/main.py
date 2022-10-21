@@ -10,6 +10,7 @@ from .utils import setup
 
 logger = logging.getLogger(__name__)
 
+
 def run(settings: Settings):
     setup.init(settings)
 
@@ -36,9 +37,9 @@ def run(settings: Settings):
 
     product_file = open(out_path / 'products.csv', 'w')
 
-    category_writer = csv.writer(category_file)
+    category_writer = csv.writer(category_file, delimiter=';')
 
-    product_writer = csv.writer(product_file)
+    product_writer = csv.writer(product_file, delimiter=';')
 
     try:
         for i, category in enumerate(categories):
@@ -74,7 +75,7 @@ def run(settings: Settings):
                         **variant
                     }
 
-                    data['images'] = ','.join(data.pop('images'))
+                    data['sku_images'] = ','.join(data.pop('sku_images'))
 
                     if not k and not j:
                         product_writer.writerow(data.keys())
@@ -99,8 +100,8 @@ def main():
             run(settings)
 
             break
-        except Exception:
+        except Exception as e:
             if not settings.restart or restarted >= settings.restart['restart_count']:
-                break
+                raise e
 
             restarted += 1
