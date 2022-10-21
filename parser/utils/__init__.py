@@ -1,8 +1,8 @@
 class Singleton:
-    _instance = None
+    _instances = dict()
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__new__(cls)
 
-        return cls._instance
+        return cls._instances[cls]
