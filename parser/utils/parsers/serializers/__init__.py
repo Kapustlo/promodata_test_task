@@ -1,4 +1,8 @@
+import logging
+
 from .base import BaseSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class CategorySerializer(BaseSerializer):
@@ -6,29 +10,29 @@ class CategorySerializer(BaseSerializer):
     def data(self):
         element = self.element
 
-        name = element.get('title')
+        name = element.text
 
         class_names = element['class'] if element.has_attr('class') else []
 
-        link = element.get('link', '')
+        link = element.get('href', '')
 
         sid = parent_id = None
 
         items = None
 
-        items = link.split('/')
+        items = tuple(
+            filter(
+                bool,
+                link.split('/')
+            )
+        )
+    
+        if element.has_attr('id'):
+            sid = items[1]
+        else:
+            sid = items[-1]
 
-        try:
-            depth = int(class_names[0].split('-')[-1])
-        except Exception:
-            depth = None
-
-        if depth is not None:
-            for i, item in enumerate(items):
-                if i == depth:
-                    parent_id = item
-                elif i + 1 == depth:
-                    sid = item
+            parent_id = items[-2]
 
         return {
             'id': sid,
@@ -43,7 +47,7 @@ class ProductSerializer(BaseSerializer):
     def _map_variant(self, variant):
         tds = variant.select('td')
 
-        article = barcode = price = volume = ''
+        article = barcode = volume = ''
 
         in_stock = None
 
@@ -63,6 +67,20 @@ class ProductSerializer(BaseSerializer):
             elif i == 2:
                 volume = value
 
+        if not article:
+            logger.error(f'Failed to get article {tds}')
+
+        if not barcode:
+            logger.error(f'Failed to get barcode {tds}')
+
+        try:
+            price = variant.select_one('.catalog-price').text
+        except Exception as e:
+            if in_stock:
+                logger.error(f'Failed to get price {tds} | {e}')
+
+            price = ''
+
         return {
             'article': article,
             'barcode': barcode,
@@ -81,18 +99,27 @@ class ProductSerializer(BaseSerializer):
 
         try:
             country = element.select_one('.catalog-element-offer-left p').text.split(':')[-1].strip()
-        except Exception:
+        except Exception as e:
             country = ''
+
+            logger.error(f'Faield to get country: {e}')
 
         try:
             name = element.select_one('h1').text
-        except Exception:
+        except Exception as e:
             name = ''
+
+            logger.error(f'Failed to get product name: {e}')
 
         images = element.select('.catalog-element-offer-pictures img')
 
         images = [image.get('src', '') for image in images]
 
+        filled_images = filter(bool, images)
+
+        if not len(list(filled_images)):
+            logger.warning(f'No images for product: {name}')
+            
         bread = element.select_one('.breadcrumb-navigation')
 
         tree = ''
@@ -105,6 +132,8 @@ class ProductSerializer(BaseSerializer):
                     continue
 
                 tree += f'/{li.text}'
+        else:
+            logger.error(f'Failed to find breadcrumbs for {name}')
 
         return {
             'variants': variants,

@@ -1,3 +1,4 @@
+import logging
 from typing import Generator, Any
 
 from .base import Parser
@@ -6,19 +7,25 @@ from .serializers import (
     ProductSerializer
 )
 
+logger = logging.getLogger(__name__)
+
 
 class CategoryParser(Parser):
     @property
     def data(self) -> Generator[dict[str, Any], None, None]:
+        logger.info('Starting category parsing')
+
         soup = self.get_soup('/catalog')
 
-        items = soup.select('.catalog-left a[title]')
+        items = soup.select('#catalog-menu a')
 
         for item in items:
             try:
                 yield CategorySerializer(item).data
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f'Failed to parse category: {e}')
+
+        logger.info('Finished parsing categories')
 
 
 class ProductParser(Parser):
@@ -34,11 +41,15 @@ class ProductParser(Parser):
         return data
 
     def get_page_data(self, page):
+        logger.info(f'Parsing products at page: {page}')
+
         soup = self.get_soup(f'/catalog?PAGEN_1={page}')
 
         current_page = int(soup.select_one('.navigation-current').text)
 
         if current_page != page:
+            logger.info(f'Reached last product page: {page}')
+
             return None
 
         products = soup.select('.catalog-item')
@@ -52,7 +63,7 @@ class ProductParser(Parser):
             try:
                 yield self.get_product_data(link['href'])
             except Exception as e:
-                raise e
+                logger.error(f'Failed to parse product: {e}')
 
     @property
     def data(self) -> Generator[dict[str, Any], None, None]:
