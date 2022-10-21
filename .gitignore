@@ -1,0 +1,5 @@
+/config.json
+/pyrightconfig.json
+__pycache__
+/venv
+*.log
