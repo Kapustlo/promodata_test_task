@@ -1,5 +1,4 @@
 import csv
-import time
 import logging
 from pathlib import Path
 
@@ -91,7 +90,7 @@ def run(settings: Settings):
 def main():
     args = argparser.parse_args()
 
-    settings = Settings()
+    settings = Settings(args.config)
 
     restarted = 0
 
