@@ -14,8 +14,6 @@ class CategorySerializer(BaseSerializer):
 
         name = element.text
 
-        class_names = element['class'] if element.has_attr('class') else []
-
         link = element.get('href', '')
 
         sid = parent_id = None
@@ -28,7 +26,7 @@ class CategorySerializer(BaseSerializer):
                 link.split('/')
             )
         )
-    
+
         if element.has_attr('id'):
             sid = items[1]
         else:
@@ -80,7 +78,6 @@ class ProductSerializer(BaseSerializer):
                     quantity = value
                 else:
                     weight = value
-
 
         if not article:
             logger.error(f'Failed to get article {tds}')

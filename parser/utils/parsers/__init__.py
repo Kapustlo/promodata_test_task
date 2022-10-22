@@ -1,3 +1,5 @@
+"""This module describes parser for each entity"""
+
 import logging
 from typing import Generator, Any
 from dataclasses import dataclass
@@ -31,13 +33,15 @@ class CategoryParser(Parser):
 
 @dataclass
 class ProductParser(Parser):
+    # Category uri products belong to.
+    # If not set, all products will be parsed
     prefix: str = ''
 
     @property
     def uri(self) -> str:
         return f'{self.prefix}/catalog'
 
-    def get_product_data(self, uri):
+    def get_product_data(self, uri) -> dict[str, Any]:
         soup = self.get_soup(uri)
 
         product = soup.select_one('#content')
@@ -48,7 +52,7 @@ class ProductParser(Parser):
 
         return data
 
-    def get_page_data(self, page):
+    def get_page_data(self, page) -> Generator[dict[str, Any], None, None]:
         logger.info(f'Parsing products at page: {page}')
 
         soup = self.get_soup(f'{self.uri}?PAGEN_1={page}')

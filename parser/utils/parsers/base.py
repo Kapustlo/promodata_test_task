@@ -1,6 +1,5 @@
 import time
 import random
-from pathlib import Path
 from typing import Union, Any
 from dataclasses import dataclass, field
 from bs4 import BeautifulSoup
@@ -16,6 +15,7 @@ HOST = 'https://zootovary.ru'
 class Parser(HTTP):
     delay_range: Union[int, tuple[int, int]] = 0
 
+    # Time of the last sent request
     _last_request: Union[float, None] = field(default=None, init=False)
 
     def get_delay(self) -> int:
