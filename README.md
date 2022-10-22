@@ -19,3 +19,10 @@ python -m parser --config path_to_config
 | ------ | ------ | ------ | ------ | ------ |
 | --config | Путь к конфигурационному файлу парсера | False | ./config.json | str
 | --help | Помощь | False | None | bool
+
+
+# Тестирование
+
+```bash
+pytest tests/
+```
