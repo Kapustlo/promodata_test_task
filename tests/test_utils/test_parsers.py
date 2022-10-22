@@ -36,6 +36,6 @@ def test_product_data_is_present(pdata):
 
     assert item['country'] != ''
 
-    assert len(item['images']) > 0
+    assert len(item['sku_images']) > 0
 
     assert len(item['variants']) > 0
