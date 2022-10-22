@@ -26,3 +26,7 @@ python -m parser --config path_to_config
 ```bash
 pytest tests/
 ```
+
+GitHub мной не используется, актуальные репозитории:
+- [NotABug](https://notabug.org/Kapustlo)
+- [OneDev](https://git.kapnet.tech)
