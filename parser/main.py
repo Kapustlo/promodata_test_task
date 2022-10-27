@@ -21,7 +21,8 @@ def run(settings: Settings):
         max_retries=settings.max_retries
     )
 
-    filter_fn = lambda cat: cat['id'] in allowed_categories or not len(allowed_categories)
+    def filter_fn(cat):
+        return cat['id'] in allowed_categories or cat['tree'] in allowed_categories or not len(allowed_categories)
 
     categories = filter(filter_fn, client.data)
 
@@ -44,21 +45,16 @@ def run(settings: Settings):
         for i, category in enumerate(categories):
             logger.debug(category)
 
-            url = category['url']
-
-            logger.info('url')
-
-            if url.endswith('/'):
-                url = url[:-1]
-
-            logger.info(f'Parsing products from category {url}')
+            tree = category.pop('tree')
 
             pclient = ProductParser(
-                prefix=url,
+                prefix=tree,
                 delay_range=settings.delay_range_s,
                 headers=settings.headers,
                 max_retries=settings.max_retries
             )
+
+            logger.info(f'Parsing products from category {pclient.uri}')
 
             if not i:
                 category_writer.writerow(category.keys())

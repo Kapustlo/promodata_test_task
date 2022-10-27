@@ -39,7 +39,17 @@ class ProductParser(Parser):
 
     @property
     def uri(self) -> str:
-        return f'/catalog{self.prefix}'
+        uri = '/catalog'
+
+        if not self.prefix.startswith('/'):
+            uri += '/'
+
+        uri = f'{uri}{self.prefix}'
+
+        if not uri.endswith('/'):
+            uri = f'{uri}/'
+
+        return uri
 
     def get_product_data(self, uri) -> dict[str, Any]:
         soup = self.get_soup(uri)
@@ -52,30 +62,34 @@ class ProductParser(Parser):
 
         return data
 
-    def get_page_data(self, page) -> Generator[dict[str, Any], None, None]:
+    def get_page_data(self, page) -> dict[str, Any]:
         logger.info(f'Parsing products at page: {page}')
 
         soup = self.get_soup(f'{self.uri}?PAGEN_1={page}')
 
-        current_page = int(soup.select_one('.navigation-current').text)
+        current_page = soup.select_one('.navigation-current')
 
-        if current_page != page:
-            logger.info(f'Reached last product page: {page}')
-
-            return None
+        if current_page:
+            current_page = int(current_page.text)
 
         products = soup.select('.catalog-item')
 
-        for product in products:
+        def map_fn(product):
             link = product.select_one('a.name')
 
             if not link or not link.has_attr('href'):
-                continue
+                return None
 
             try:
-                yield self.get_product_data(link['href'])
+                return self.get_product_data(link['href'])
             except Exception as e:
                 logger.error(f'Failed to parse product: {e}')
+
+        return {
+            'next': current_page + 1 if current_page else None,
+            'page': current_page,
+            'results': map(map_fn, products)
+        }
 
     @property
     def data(self) -> Generator[dict[str, Any], None, None]:
@@ -84,11 +98,15 @@ class ProductParser(Parser):
         while True:
             pdata = self.get_page_data(page)
 
-            if pdata is None:
-                break
+            results = pdata['results']
 
-            for item in pdata:
+            next_page = pdata['next']
+
+            for item in results:
                 if not item:
                     continue
 
                 yield item
+
+            if not next_page:
+                break

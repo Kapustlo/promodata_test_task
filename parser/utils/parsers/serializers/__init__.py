@@ -27,6 +27,8 @@ class CategorySerializer(BaseSerializer):
             )
         )
 
+        tree = '/'.join(items[1:])
+
         if element.has_attr('id'):
             sid = items[1]
         else:
@@ -38,7 +40,8 @@ class CategorySerializer(BaseSerializer):
             'id': sid,
             'parent_id': parent_id,
             'name': name,
-            'url': link
+            'url': link,
+            'tree': tree
         }
 
 
