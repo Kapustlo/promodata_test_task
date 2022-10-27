@@ -1,3 +1,4 @@
+import re
 import logging
 from datetime import datetime
 
@@ -79,8 +80,17 @@ class ProductSerializer(BaseSerializer):
                     volume = value
                 elif value.endswith('шт'):
                     quantity = value
+
                 else:
                     weight = value
+
+        if quantity == 'шт':
+            match = re.search(r'(\dt+) шт', article)
+
+            if match:
+                quantity = match.group(0)
+
+        quantity = quantity.replace('шт', '')
 
         if not article:
             logger.error(f'Failed to get article {tds}')
@@ -131,7 +141,7 @@ class ProductSerializer(BaseSerializer):
 
         images = element.select('.catalog-element-offer-pictures img')
 
-        images = [image.get('src', '') for image in images]
+        images = [HOST + image.get('src', '') for image in images]
 
         filled_images = filter(bool, images)
 
@@ -146,7 +156,7 @@ class ProductSerializer(BaseSerializer):
             lis = bread.select('li')
 
             for i, li in enumerate(lis):
-                if i == 0 or i % 2 != 0:
+                if i == 0 or i % 2 != 0 or i + 1 == len(lis):
                     continue
 
                 tree += f'/{li.text}'
