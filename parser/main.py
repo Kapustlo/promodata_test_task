@@ -61,21 +61,24 @@ def run(settings: Settings):
 
             category_writer.writerow(category.values())
 
-            for k, item in enumerate(pclient.data):
-                logger.debug(item)
+            try:
+                for k, item in enumerate(pclient.data):
+                    logger.debug(item)
 
-                for j, variant in enumerate(item.pop('variants')):
-                    data = {
-                        **item,
-                        **variant
-                    }
+                    for j, variant in enumerate(item.pop('variants')):
+                        data = {
+                            **item,
+                            **variant
+                        }
 
-                    data['sku_images'] = ','.join(data.pop('sku_images'))
+                        data['sku_images'] = ','.join(data.pop('sku_images'))
 
-                    if not k and not j:
-                        product_writer.writerow(data.keys())
+                        if not k and not j:
+                            product_writer.writerow(data.keys())
 
-                    product_writer.writerow(data.values())
+                        product_writer.writerow(data.values())
+            except Exception as e:
+                logger.error(e)
 
     finally:
         category_file.close()
