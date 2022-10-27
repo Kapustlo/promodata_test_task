@@ -95,18 +95,15 @@ class ProductParser(Parser):
     def data(self) -> Generator[dict[str, Any], None, None]:
         page = 1
 
-        while True:
+        while page:
             pdata = self.get_page_data(page)
 
             results = pdata['results']
 
-            next_page = pdata['next']
+            page = pdata['next']
 
             for item in results:
                 if not item:
                     continue
 
                 yield item
-
-            if not next_page:
-                break
