@@ -14,7 +14,7 @@ DEFAULT_CONFIG_PATH = 'config.json'
 
 def normalize_config(data: dict[str, Any]) -> dict[str, Any]:
     if isinstance(data.get('categories'), str):
-        data['categories'] = data.pop('categories').split(',')
+        data['categories'] = list(filter(bool, data.pop('categories').split(',')))
 
     return data
 
