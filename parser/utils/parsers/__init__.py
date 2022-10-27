@@ -39,7 +39,7 @@ class ProductParser(Parser):
 
     @property
     def uri(self) -> str:
-        return f'{self.prefix}/catalog'
+        return f'/catalog{self.prefix}'
 
     def get_product_data(self, uri) -> dict[str, Any]:
         soup = self.get_soup(uri)
