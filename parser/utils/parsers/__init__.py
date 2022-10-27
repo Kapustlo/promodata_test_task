@@ -62,6 +62,17 @@ class ProductParser(Parser):
 
         return data
 
+    def __map_product(self, product):
+        link = product.select_one('a.name')
+
+        if not link or not link.has_attr('href'):
+            return None
+
+        try:
+            return self.get_product_data(link['href'])
+        except Exception as e:
+            logger.error(f'Failed to parse product: {e}')
+
     def get_page_data(self, page) -> dict[str, Any]:
         logger.info(f'Parsing products at page: {page}')
 
@@ -74,21 +85,10 @@ class ProductParser(Parser):
 
         products = soup.select('.catalog-item')
 
-        def map_fn(product):
-            link = product.select_one('a.name')
-
-            if not link or not link.has_attr('href'):
-                return None
-
-            try:
-                return self.get_product_data(link['href'])
-            except Exception as e:
-                logger.error(f'Failed to parse product: {e}')
-
         return {
             'next': current_page + 1 if current_page else None,
             'page': current_page,
-            'results': map(map_fn, products)
+            'results': filter(bool, map(self.__map_product, products))
         }
 
     @property
